@@ -52,8 +52,8 @@ def get_args_parser():
                         help="line number of anchor points")
 
     # dataset parameters
-    parser.add_argument('--dataset_file', default='SHHA')
-    parser.add_argument('--data_root', default='./new_public_density_data',
+    parser.add_argument('--dataset_file', default='DRONEBIRD')
+    parser.add_argument('--data_root', default='../../ds/dronebird',
                         help='path where the dataset is')
     
     parser.add_argument('--output_dir', default='./log',

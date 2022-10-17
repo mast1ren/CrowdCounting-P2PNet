@@ -82,6 +82,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
     metric_logger = utils.MetricLogger(delimiter="  ")
     metric_logger.add_meter('lr', utils.SmoothedValue(window_size=1, fmt='{value:.6f}'))
     # iterate all training samples
+    i = 0
     for samples, targets in data_loader:
         samples = samples.to(device)
         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
@@ -101,7 +102,8 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
         losses_reduced_scaled = sum(loss_dict_reduced_scaled.values())
 
         loss_value = losses_reduced_scaled.item()
-
+        i += 1
+        print('\r[{:{}}/{}] loss: {:.4f}'.format(i, len(str(len(data_loader))), len(data_loader), loss_value), end='')
         if not math.isfinite(loss_value):
             print("Loss is {}, stopping training".format(loss_value))
             print(loss_dict_reduced)
@@ -115,6 +117,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
         # update logger
         metric_logger.update(loss=loss_value, **loss_dict_reduced_scaled, **loss_dict_reduced_unscaled)
         metric_logger.update(lr=optimizer.param_groups[0]["lr"])
+    print()
     # gather the stats from all processes
     metric_logger.synchronize_between_processes()
     print("Averaged stats:", metric_logger)
@@ -130,6 +133,7 @@ def evaluate_crowd_no_overlap(model, data_loader, device, vis_dir=None):
     # run inference on all images to calc MAE
     maes = []
     mses = []
+    i = 0
     for samples, targets in data_loader:
         samples = samples.to(device)
 
@@ -150,8 +154,11 @@ def evaluate_crowd_no_overlap(model, data_loader, device, vis_dir=None):
         # accumulate MAE, MSE
         mae = abs(predict_cnt - gt_cnt)
         mse = (predict_cnt - gt_cnt) * (predict_cnt - gt_cnt)
+        i += 1
+        print('\r[{:{}}/{}] mae: {:.4f}, mse: {:.4f}, pred: {:.4f}, gt: {:.4f}'.format(i, len(str(len(data_loader))), len(data_loader), mae, mse, predict_cnt, gt_cnt), end='')
         maes.append(float(mae))
         mses.append(float(mse))
+    print()
     # calc MAE, MSE
     mae = np.mean(maes)
     mse = np.sqrt(np.mean(mses))

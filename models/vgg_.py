@@ -25,9 +25,10 @@ model_urls = {
 
 
 model_paths = {
-    'vgg16_bn': '/apdcephfs/private_changanwang/checkpoints/vgg16_bn-6c64b313.pth',
-    'vgg16': '/apdcephfs/private_changanwang/checkpoints/vgg16-397923af.pth',
-
+    'vgg16_bn': 'C:/Users/aaa/.cache/torch/hub/checkpoints/vgg16_bn-6c64b313.pth',
+    # 'vgg16_bn': '/apdcephfs/private_changanwang/checkpoints/vgg16_bn-6c64b313.pth',
+    'vgg16': 'C:/Users/aaa/.cache/torch/hub/checkpoints/vgg16-397923af.pth',
+    # 'vgg16': '/apdcephfs/private_changanwang/checkpoints/vgg16-397923af.pth',
 }
 
 
