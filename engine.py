@@ -8,6 +8,7 @@ import os
 import sys
 from typing import Iterable
 
+import cv2
 import torch
 
 import util.misc as utils
@@ -15,7 +16,6 @@ from util.misc import NestedTensor
 import numpy as np
 import time
 import torchvision.transforms as standard_transforms
-import cv2
 
 class DeNormalize(object):
     def __init__(self, mean, std):

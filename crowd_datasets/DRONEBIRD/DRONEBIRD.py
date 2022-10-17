@@ -1,10 +1,10 @@
+import cv2
+import torch
 import os
 import random
-import torch
 import numpy as np
 from torch.utils.data import Dataset
 from PIL import Image
-import cv2
 import glob
 import scipy.io as io
 import json
@@ -121,8 +121,8 @@ def load_data(img_gt_path, train):
 
 # random crop augumentation
 def random_crop(img, den, num_patch=4):
-    half_h = 128
-    half_w = 128
+    half_h = 512
+    half_w = 512
     result_img = np.zeros([num_patch, img.shape[0], half_h, half_w])
     result_den = []
     # crop num_patch for each image

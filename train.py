@@ -1,10 +1,12 @@
+# import faulthandler
+# faulthandler.enable()
+import torch
 import argparse
 import datetime
 import random
 import time
 from pathlib import Path
 
-import torch
 from torch.utils.data import DataLoader, DistributedSampler
 
 from crowd_datasets import build_dataset
@@ -13,6 +15,7 @@ from models import build_model
 import os
 from tensorboardX import SummaryWriter
 import warnings
+
 warnings.filterwarnings('ignore')
 
 def get_args_parser():
@@ -121,6 +124,7 @@ def main(args):
     train_set, val_set = loading_data(args.data_root)
     # create the sampler used during training
     sampler_train = torch.utils.data.RandomSampler(train_set)
+    # sampler_train = torch.utils.data.SequentialSampler(train_set)
     sampler_val = torch.utils.data.SequentialSampler(val_set)
 
     batch_sampler_train = torch.utils.data.BatchSampler(

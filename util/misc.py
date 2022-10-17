@@ -8,11 +8,11 @@ import os
 import subprocess
 import time
 from collections import defaultdict, deque
+import torch
 import datetime
 import pickle
 from typing import Optional, List
 
-import torch
 import torch.distributed as dist
 from torch import Tensor
 
@@ -22,9 +22,9 @@ from torch.autograd import Variable
 
 # needed due to empty tensor bug in pytorch and torchvision 0.5
 import torchvision
-# if float(torchvision.__version__[:4]) < 0.7:
-#     from torchvision.ops import _new_empty_tensor
-#     from torchvision.ops.misc import _output_size
+if float(torchvision.__version__.split('.')[1]) < 7:
+    from torchvision.ops import _new_empty_tensor
+    from torchvision.ops.misc import _output_size
 
 
 class SmoothedValue(object):
@@ -447,7 +447,7 @@ def interpolate(input, size=None, scale_factor=None, mode="nearest", align_corne
     This will eventually be supported natively by PyTorch, and this
     class can go away.
     """
-    if float(torchvision.__version__[:3]) < 0.7:
+    if float(torchvision.__version__.split('.')[1]) < 7:
         if input.numel() > 0:
             return torch.nn.functional.interpolate(
                 input, size, scale_factor, mode, align_corners
