@@ -1,5 +1,5 @@
-# import faulthandler
-# faulthandler.enable()
+import faulthandler
+faulthandler.enable()
 import torch
 import argparse
 import datetime

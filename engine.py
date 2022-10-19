@@ -8,8 +8,8 @@ import os
 import sys
 from typing import Iterable
 
-import cv2
 import torch
+import cv2
 
 import util.misc as utils
 from util.misc import NestedTensor
