@@ -124,43 +124,44 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
     return {k: meter.global_avg for k, meter in metric_logger.meters.items()}
 
 # the inference routine
-@torch.no_grad()
+# @torch.no_grad()
 def evaluate_crowd_no_overlap(model, data_loader, device, vis_dir=None):
-    model.eval()
+    with torch.no_grad():
+        model.eval()
 
-    metric_logger = utils.MetricLogger(delimiter="  ")
-    metric_logger.add_meter('class_error', utils.SmoothedValue(window_size=1, fmt='{value:.2f}'))
-    # run inference on all images to calc MAE
-    maes = []
-    mses = []
-    i = 0
-    for samples, targets in data_loader:
-        samples = samples.to(device)
+        metric_logger = utils.MetricLogger(delimiter="  ")
+        metric_logger.add_meter('class_error', utils.SmoothedValue(window_size=1, fmt='{value:.2f}'))
+        # run inference on all images to calc MAE
+        maes = []
+        mses = []
+        i = 0
+        for samples, targets in data_loader:
+            samples = samples.to(device)
 
-        outputs = model(samples)
-        outputs_scores = torch.nn.functional.softmax(outputs['pred_logits'], -1)[:, :, 1][0]
+            outputs = model(samples)
+            outputs_scores = torch.nn.functional.softmax(outputs['pred_logits'], -1)[:, :, 1][0]
 
-        outputs_points = outputs['pred_points'][0]
+            outputs_points = outputs['pred_points'][0]
 
-        gt_cnt = targets[0]['point'].shape[0]
-        # 0.5 is used by default
-        threshold = 0.5
+            gt_cnt = targets[0]['point'].shape[0]
+            # 0.5 is used by default
+            threshold = 0.5
 
-        points = outputs_points[outputs_scores > threshold].detach().cpu().numpy().tolist()
-        predict_cnt = int((outputs_scores > threshold).sum())
-        # if specified, save the visualized images
-        if vis_dir is not None: 
-            vis(samples, targets, [points], vis_dir)
-        # accumulate MAE, MSE
-        mae = abs(predict_cnt - gt_cnt)
-        mse = (predict_cnt - gt_cnt) * (predict_cnt - gt_cnt)
-        i += 1
-        print('\r[{:{}}/{}] mae: {:.4f}, mse: {:.4f}, pred: {:.4f}, gt: {:.4f}'.format(i, len(str(len(data_loader))), len(data_loader), mae, mse, predict_cnt, gt_cnt), end='')
-        maes.append(float(mae))
-        mses.append(float(mse))
-    print()
-    # calc MAE, MSE
-    mae = np.mean(maes)
-    mse = np.sqrt(np.mean(mses))
+            points = outputs_points[outputs_scores > threshold].detach().cpu().numpy().tolist()
+            predict_cnt = int((outputs_scores > threshold).sum())
+            # if specified, save the visualized images
+            if vis_dir is not None: 
+                vis(samples, targets, [points], vis_dir)
+            # accumulate MAE, MSE
+            mae = abs(predict_cnt - gt_cnt)
+            mse = (predict_cnt - gt_cnt) * (predict_cnt - gt_cnt)
+            i += 1
+            print('\r[{:{}}/{}] mae: {:.4f}, mse: {:.4f}, pred: {:.4f}, gt: {:.4f}'.format(i, len(str(len(data_loader))), len(data_loader), mae, mse, predict_cnt, gt_cnt), end='')
+            maes.append(float(mae))
+            mses.append(float(mse))
+        print()
+        # calc MAE, MSE
+        mae = np.mean(maes)
+        mse = np.sqrt(np.mean(mses))
 
-    return mae, mse
+        return mae, mse

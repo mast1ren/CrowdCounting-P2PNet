@@ -28,7 +28,7 @@ class HungarianMatcher_Crowd(nn.Module):
         self.cost_point = cost_point
         assert cost_class != 0 or cost_point != 0, "all costs cant be 0"
 
-    @torch.no_grad()
+    # @torch.no_grad()
     def forward(self, outputs, targets):
         """ Performs the matching
 
@@ -49,40 +49,41 @@ class HungarianMatcher_Crowd(nn.Module):
             For each batch element, it holds:
                 len(index_i) = len(index_j) = min(num_queries, num_target_points)
         """
-        bs, num_queries = outputs["pred_logits"].shape[:2]
+        with torch.no_grad():
+            bs, num_queries = outputs["pred_logits"].shape[:2]
 
-        # We flatten to compute the cost matrices in a batch
-        out_prob = outputs["pred_logits"].flatten(0, 1).softmax(-1)  # [batch_size * num_queries, num_classes]
-        out_points = outputs["pred_points"].flatten(0, 1)  # [batch_size * num_queries, 2]
+            # We flatten to compute the cost matrices in a batch
+            out_prob = outputs["pred_logits"].flatten(0, 1).softmax(-1)  # [batch_size * num_queries, num_classes]
+            out_points = outputs["pred_points"].flatten(0, 1)  # [batch_size * num_queries, 2]
 
-        # Also concat the target labels and points
-        # tgt_ids = torch.cat([v["labels"] for v in targets])
-        tgt_ids = torch.cat([v["labels"] for v in targets])
-        tgt_points = torch.cat([v["point"] for v in targets])
+            # Also concat the target labels and points
+            # tgt_ids = torch.cat([v["labels"] for v in targets])
+            tgt_ids = torch.cat([v["labels"] for v in targets])
+            tgt_points = torch.cat([v["point"] for v in targets])
 
-        # Compute the classification cost. Contrary to the loss, we don't use the NLL,
-        # but approximate it in 1 - proba[target class].
-        # The 1 is a constant that doesn't change the matching, it can be ommitted.
-        cost_class = -out_prob[:, tgt_ids]
+            # Compute the classification cost. Contrary to the loss, we don't use the NLL,
+            # but approximate it in 1 - proba[target class].
+            # The 1 is a constant that doesn't change the matching, it can be ommitted.
+            cost_class = -out_prob[:, tgt_ids]
 
-        # Compute the L2 cost between point
-        cost_point = torch.cdist(out_points, tgt_points, p=2)
+            # Compute the L2 cost between point
+            cost_point = torch.cdist(out_points, tgt_points, p=2)
 
-        # Compute the giou cost between point
+            # Compute the giou cost between point
 
-        # Final cost matrix
-        C = self.cost_point * cost_point + self.cost_class * cost_class
-        C = C.view(bs, num_queries, -1).cpu()
+            # Final cost matrix
+            C = self.cost_point * cost_point + self.cost_class * cost_class
+            C = C.view(bs, num_queries, -1).cpu()
 
-        sizes = [len(v["point"]) for v in targets]
-        
-        # indices = []
-        # for i, c in enumerate(C):
-            
-        print("before matcher")
-        indices = (linear_sum_assignment(c[i]) for i, c in enumerate(C.split(sizes, -1)))
-        print("after matcher")
-        return [(torch.as_tensor(i, dtype=torch.int64), torch.as_tensor(j, dtype=torch.int64)) for i, j in indices]
+            sizes = [len(v["point"]) for v in targets]
+
+            # indices = []
+            # for i, c in enumerate(C):
+
+            # print("before matcher")
+            indices = (linear_sum_assignment(c[i]) for i, c in enumerate(C.split(sizes, -1)))
+            # print("after matcher")
+            return [(torch.as_tensor(i, dtype=torch.int64), torch.as_tensor(j, dtype=torch.int64)) for i, j in indices]
 
 
 def build_matcher_crowd(args):
