@@ -22,10 +22,10 @@ def get_args_parser():
     parser = argparse.ArgumentParser('Set parameters for training P2PNet', add_help=False)
     parser.add_argument('--lr', default=1e-4, type=float)
     parser.add_argument('--lr_backbone', default=1e-5, type=float)
-    parser.add_argument('--batch_size', default=8, type=int)
+    parser.add_argument('--batch_size', default=2, type=int)
     parser.add_argument('--weight_decay', default=1e-4, type=float)
-    parser.add_argument('--epochs', default=3500, type=int)
-    parser.add_argument('--lr_drop', default=3500, type=int)
+    parser.add_argument('--epochs', default=20, type=int)
+    parser.add_argument('--lr_drop', default=5, type=int)
     parser.add_argument('--clip_max_norm', default=0.1, type=float,
                         help='gradient clipping max norm')
 
@@ -71,8 +71,8 @@ def get_args_parser():
     parser.add_argument('--start_epoch', default=0, type=int, metavar='N',
                         help='start epoch')
     parser.add_argument('--eval', action='store_true')
-    parser.add_argument('--num_workers', default=8, type=int)
-    parser.add_argument('--eval_freq', default=5, type=int,
+    parser.add_argument('--num_workers', default=0, type=int)
+    parser.add_argument('--eval_freq', default=1, type=int,
                         help='frequency of evaluation, default setting is evaluating in every 5 epoch')
     parser.add_argument('--gpu_id', default=0, type=int, help='the gpu used for training')
 
