@@ -53,7 +53,7 @@ class DRONEBIRD(Dataset):
         assert index <= len(self), 'index range error'
 
         img_path = self.img_list[index]
-        gt_path = img_path.replace('data', 'annotation').replace('jpg', 'mat')
+        gt_path = os.path.join(os.path.dirname(img_path).replace('images', 'ground_truth'), 'GT_'+os.path.basename(img_path).replace('.jpg', '.mat'))
         # load image and ground truth
         img, point = load_data((img_path, gt_path), self.train)
         # applu augumentation
@@ -93,7 +93,8 @@ class DRONEBIRD(Dataset):
             image_id = torch.Tensor([image_id]).long()
             target[i]['image_id'] = image_id
             target[i]['labels'] = torch.ones([point[i].shape[0]]).long()
-
+        if target[0]['point'].shape[0] < 10:
+            return None, target
         return img, target
 
 
@@ -120,9 +121,9 @@ def load_data(img_gt_path, train):
     return img, np.array(points)
 
 # random crop augumentation
-def random_crop(img, den, num_patch=4):
-    half_h = 512
-    half_w = 512
+def random_crop(img, den, num_patch=2):
+    half_h = 1024
+    half_w = 1024
     result_img = np.zeros([num_patch, img.shape[0], half_h, half_w])
     result_den = []
     # crop num_patch for each image

@@ -84,10 +84,21 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
     # iterate all training samples
     i = 0
     for samples, targets in data_loader:
+        if samples is None:
+            i+=1
+            continue
         samples = samples.to(device)
+        
+        gt_cnt = targets[0]['point'].shape[0]
+        
         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
         # forward
         outputs = model(samples)
+        outputs_scores = torch.nn.functional.softmax(outputs['pred_logits'], -1)[:, :, 1][0]
+
+        threshold = 0.45
+
+        predict_cnt = int((outputs_scores > threshold).sum())
         # calc the losses
         loss_dict = criterion(outputs, targets)
         weight_dict = criterion.weight_dict
@@ -103,7 +114,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
 
         loss_value = losses_reduced_scaled.item()
         i += 1
-        print('\r[{:{}}/{}] loss: {:.4f}'.format(i, len(str(len(data_loader))), len(data_loader), loss_value), end='')
+        print('\r[{:{}}/{}] loss: {:.4f}, pred: {:.2f}, gt {:.2f}'.format(i, len(str(len(data_loader))), len(data_loader), loss_value, predict_cnt, gt_cnt), end='')
         if not math.isfinite(loss_value):
             print("Loss is {}, stopping training".format(loss_value))
             print(loss_dict_reduced)
@@ -145,7 +156,7 @@ def evaluate_crowd_no_overlap(model, data_loader, device, vis_dir=None):
 
             gt_cnt = targets[0]['point'].shape[0]
             # 0.5 is used by default
-            threshold = 0.5
+            threshold = 0.45
 
             points = outputs_points[outputs_scores > threshold].detach().cpu().numpy().tolist()
             predict_cnt = int((outputs_scores > threshold).sum())
@@ -160,6 +171,7 @@ def evaluate_crowd_no_overlap(model, data_loader, device, vis_dir=None):
             maes.append(float(mae))
             mses.append(float(mse))
         print()
+        print('max mae: {:.4f}, min mae: {:.4f}'.format(max(maes), min(maes)))
         # calc MAE, MSE
         mae = np.mean(maes)
         mse = np.sqrt(np.mean(mses))

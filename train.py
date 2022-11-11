@@ -22,7 +22,7 @@ def get_args_parser():
     parser = argparse.ArgumentParser('Set parameters for training P2PNet', add_help=False)
     parser.add_argument('--lr', default=1e-6, type=float)
     parser.add_argument('--lr_backbone', default=1e-5, type=float)
-    parser.add_argument('--batch_size', default=2, type=int)
+    parser.add_argument('--batch_size', default=1, type=int)
     parser.add_argument('--weight_decay', default=1e-4, type=float)
     parser.add_argument('--epochs', default=10, type=int)
     parser.add_argument('--lr_drop', default=2, type=int)
@@ -124,17 +124,19 @@ def main(args):
     train_set, val_set = loading_data(args.data_root)
     # create the sampler used during training
     sampler_train = torch.utils.data.RandomSampler(train_set)
-    # sampler_train = torch.utils.data.SequentialSampler(train_set)
     sampler_val = torch.utils.data.SequentialSampler(val_set)
 
     batch_sampler_train = torch.utils.data.BatchSampler(
         sampler_train, args.batch_size, drop_last=True)
     # the dataloader for training
-    data_loader_train = DataLoader(train_set, batch_sampler=batch_sampler_train,
-                                   collate_fn=utils.collate_fn_crowd, num_workers=args.num_workers)
-
-    data_loader_val = DataLoader(val_set, 1, sampler=sampler_val,
+    data_loader_train = DataLoader(train_set, args.batch_size, shuffle=True, collate_fn=utils.collate_fn_crowd, num_workers=args.num_workers, pin_memory=True, drop_last=True)
+    data_loader_val = DataLoader(val_set, 1, shuffle=False,
                                     drop_last=False, collate_fn=utils.collate_fn_crowd, num_workers=args.num_workers)
+    # data_loader_train = DataLoader(train_set, batch_sampler=batch_sampler_train,
+    #                                collate_fn=utils.collate_fn_crowd, num_workers=args.num_workers)
+
+    # data_loader_val = DataLoader(val_set, 1, sampler=sampler_val,
+    #                                 drop_last=False, collate_fn=utils.collate_fn_crowd, num_workers=args.num_workers)
 
     if args.frozen_weights is not None:
         checkpoint = torch.load(args.frozen_weights, map_location='cpu')

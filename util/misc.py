@@ -275,17 +275,23 @@ def collate_fn(batch):
     return tuple(batch)
 
 def collate_fn_crowd(batch):
+
     # re-organize the batch
     batch_new = []
     for b in batch:
         imgs, points = b
+        if imgs is None:
+            continue
         if imgs.ndim == 3:
             imgs = imgs.unsqueeze(0)
         for i in range(len(imgs)):
             batch_new.append((imgs[i, :, :, :], points[i]))
     batch = batch_new
     batch = list(zip(*batch))
+    if batch == []:
+        return None, 1
     batch[0] = nested_tensor_from_tensor_list(batch[0])
+    
     return tuple(batch)
 
 
