@@ -9,6 +9,8 @@ import numpy as np
 from PIL import Image
 import json
 import h5py
+import scipy.io as io
+from sklearn.metrics import mean_squared_error,mean_absolute_error
 
 def get_args_parser():
     parser = argparse.ArgumentParser('Set parameters for P2PNet evaluation', add_help=False)
@@ -46,8 +48,48 @@ transform = standard_transforms.Compose([
         standard_transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ])
 
+def get_seq_class(seq, set):
+    backlight = ['DJI_0021', 'DJI_0032', 'DJI_0202', 'DJI_0339', 'DJI_0340']
+    # cloudy = ['DJI_0519', 'DJI_0554']
+    
+    # uhd = ['DJI_0332', 'DJI_0334', 'DJI_0339', 'DJI_0340', 'DJI_0342', 'DJI_0343', 'DJI_345', 'DJI_0348', 'DJI_0519', 'DJI_0544']
+
+    fly = ['DJI_0177', 'DJI_0174', 'DJI_0022', 'DJI_0180', 'DJI_0181', 'DJI_0200', 'DJI_0544', 'DJI_0012', 'DJI_0178', 'DJI_0343', 'DJI_0185', 'DJI_0195']
+
+    angle_90 = ['DJI_0179', 'DJI_0186', 'DJI_0189', 'DJI_0191', 'DJI_0196', 'DJI_0190']
+
+    mid_size = ['DJI_0012', 'DJI_0013', 'DJI_0014', 'DJI_0021', 'DJI_0022', 'DJI_0026', 'DJI_0028', 'DJI_0028', 'DJI_0030', 'DJI_0028', 'DJI_0030', 'DJI_0034','DJI_0200', 'DJI_0544']
+
+    light = 'sunny'
+    bird = 'stand'
+    angle = '60'
+    size = 'small'
+    # resolution = '4k'
+    if seq in backlight:
+        light = 'backlight'
+    # elif seq in cloudy:
+    #     light = 'cloudy'
+    if seq in fly:
+        bird = 'fly'
+    if seq in angle_90:
+        angle = '90'
+    if seq in mid_size:
+        size = 'mid'
+
+    # if seq in uhd:
+    #     resolution = 'uhd'
+    
+    # count = 'sparse'
+    # loca = sio.loadmat(os.path.join(set, seq, 'annotation/000000.mat'))['locations']
+    # if loca.shape[0] > 150:
+    #     count = 'crowded'
+    # return light, resolution, count
+    return light, angle, bird, size
+
 with open('../../ds/dronebird/test.json', 'r') as f:
     img_list = json.load(f)
+preds = [[] for i in range(8)]
+gts = [[] for i in range(8)]
 with torch.no_grad():
     metric_logger = utils.MetricLogger(delimiter="  ")
     metric_logger.add_meter('class_error', utils.SmoothedValue(window_size=1, fmt='{value:.2f}'))
@@ -56,6 +98,11 @@ with torch.no_grad():
     mses = []
     i = 0
     for img_path in img_list:
+        img_path = os.path.join('../../ds/dronebird', img_path)
+        seq = int(os.path.basename(img_path)[3:6])
+        seq = 'DJI_' + str(seq).zfill(4)
+        light, angle, bird, size = get_seq_class(seq, 'test')
+
         img_raw = Image.open(img_path).convert('RGB')
         img = transform(img_raw)
         img = img.unsqueeze(0)
@@ -64,17 +111,46 @@ with torch.no_grad():
         outputs_scores = torch.nn.functional.softmax(outputs['pred_logits'], -1)[:, :, 1][0]
         outputs_points = outputs['pred_points'][0]
 
-        gt = h5py.File(img_path.replace('data', 'annotation').replace('.jpg', '.h5'), 'r')['density'][:]
-        gt_cnt = gt.sum()
+        gt_path = os.path.join(os.path.dirname(img_path).replace('images', 'ground_truth'), 'GT_'+os.path.basename(img_path).replace('.jpg', '.mat'))
+        gt_file = io.loadmat(gt_path)['locations']
+        # gt = h5py.File(img_path.replace('data', 'annotation').replace('.jpg', '.h5'), 'r')['density'][:]
+        gt_e = gt_file.shape[0]
+        count = 'crowded' if gt_e > 150 else 'sparse'
+
         # 0.5 is used by default
         threshold = 0.5
         points = outputs_points[outputs_scores > threshold].detach().cpu().numpy().tolist()
         predict_cnt = int((outputs_scores > threshold).sum())
+        pred_e = predict_cnt
+        if light == 'sunny':
+            preds[0].append(pred_e)
+            gts[0].append(gt_e)
+        elif light == 'backlight':
+            preds[1].append(pred_e)
+            gts[1].append(gt_e)
+        if angle == '60':
+            preds[2].append(pred_e)
+            gts[2].append(gt_e)
+        else:
+            preds[3].append(pred_e)
+            gts[3].append(gt_e)
+        if bird == 'stand':
+            preds[4].append(pred_e)
+            gts[4].append(gt_e)
+        else:
+            preds[5].append(pred_e)
+            gts[5].append(gt_e)
+        if size == 'small':
+            preds[6].append(pred_e)
+            gts[6].append(gt_e)
+        else:
+            preds[7].append(pred_e)
+            gts[7].append(gt_e)
         # accumulate MAE, MSE
-        mae = abs(predict_cnt - gt_cnt)
-        mse = (predict_cnt - gt_cnt) * (predict_cnt - gt_cnt)
+        mae = abs(predict_cnt - gt_e)
+        mse = (predict_cnt - gt_e) * (predict_cnt - gt_e)
         i += 1
-        print('\r[{:{}}/{}] mae: {:.4f}, mse: {:.4f}, pred: {:.4f}, gt: {:.4f}'.format(i, len(str(len(img_list))), len(img_list), mae, mse, predict_cnt, gt_cnt), end='')
+        print('\r[{:{}}/{}] mae: {:.4f}, mse: {:.4f}, pred: {:.4f}, gt: {:.4f}'.format(i, len(str(len(img_list))), len(img_list), mae, mse, predict_cnt, gt_e), end='')
         maes.append(float(mae))
         mses.append(float(mse))
     print()
@@ -82,3 +158,11 @@ with torch.no_grad():
     print('max mae: {:.4f}, min mae: {:.4f}'.format(max(maes), min(maes)))
     mae = np.mean(maes)
     mse = np.sqrt(np.mean(mses))
+
+    
+attri = ['sunny', 'backlight', '60', '90', 'stand', 'fly', 'small', 'mid']
+for i in range(8):
+    # print(len(preds[i]))
+    if len(preds[i]) == 0:
+        continue
+    print('{}: MAE:{}. RMSE:{}.'.format(attri[i], mean_absolute_error(preds[i], gts[i]), np.sqrt(mean_squared_error(preds[i], gts[i]))))

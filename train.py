@@ -24,8 +24,8 @@ def get_args_parser():
     parser.add_argument('--lr_backbone', default=1e-5, type=float)
     parser.add_argument('--batch_size', default=1, type=int)
     parser.add_argument('--weight_decay', default=1e-4, type=float)
-    parser.add_argument('--epochs', default=10, type=int)
-    parser.add_argument('--lr_drop', default=2, type=int)
+    parser.add_argument('--epochs', default=50, type=int)
+    parser.add_argument('--lr_drop', default=5, type=int)
     parser.add_argument('--clip_max_norm', default=0.1, type=float,
                         help='gradient clipping max norm')
 
@@ -66,7 +66,7 @@ def get_args_parser():
     parser.add_argument('--tensorboard_dir', default='./runs',
                         help='path where to save, empty for no saving')
 
-    parser.add_argument('--seed', default=42, type=int)
+    parser.add_argument('--seed', default=2464, type=int)
     parser.add_argument('--resume', default='', help='resume from checkpoint')
     parser.add_argument('--start_epoch', default=0, type=int, metavar='N',
                         help='start epoch')

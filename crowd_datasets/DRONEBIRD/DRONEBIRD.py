@@ -53,6 +53,7 @@ class DRONEBIRD(Dataset):
         assert index <= len(self), 'index range error'
 
         img_path = self.img_list[index]
+        img_path = os.path.join(self.root_path, img_path)
         gt_path = os.path.join(os.path.dirname(img_path).replace('images', 'ground_truth'), 'GT_'+os.path.basename(img_path).replace('.jpg', '.mat'))
         # load image and ground truth
         img, point = load_data((img_path, gt_path), self.train)
@@ -89,7 +90,8 @@ class DRONEBIRD(Dataset):
         target = [{} for i in range(len(point))]
         for i, _ in enumerate(point):
             target[i]['point'] = torch.Tensor(point[i])
-            image_id = int(img_path.split('/')[-3].split('_')[1]+img_path.split('/')[-1].split('.')[0])
+            image_id = int(os.path.basename(img_path).split('.')[0][3:])
+            # image_id = int(img_path.split('/')[-3].split('_')[1]+img_path.split('/')[-1].split('.')[0])
             image_id = torch.Tensor([image_id]).long()
             target[i]['image_id'] = image_id
             target[i]['labels'] = torch.ones([point[i].shape[0]]).long()
