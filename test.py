@@ -155,14 +155,19 @@ with torch.no_grad():
         mses.append(float(mse))
     print()
     # calc MAE, MSE
-    print('max mae: {:.4f}, min mae: {:.4f}'.format(max(maes), min(maes)))
-    mae = np.mean(maes)
-    mse = np.sqrt(np.mean(mses))
+    with open('result.txt', 'w') as f:
+        f.write('max mae: {:.4f}, min mae: {:.4f}\n'.format(max(maes), min(maes)))
+        print('max mae: {:.4f}, min mae: {:.4f}'.format(max(maes), min(maes)))
+        mae = np.mean(maes)
+        mse = np.sqrt(np.mean(mses))
+        print('mae: {:.4f}, mse: {:.4f}'.format(mae, mse))
+        f.write('mae: {:.4f}, mse: {:.4f}\n'.format(mae, mse))
 
     
-attri = ['sunny', 'backlight', '60', '90', 'stand', 'fly', 'small', 'mid']
-for i in range(8):
-    # print(len(preds[i]))
-    if len(preds[i]) == 0:
-        continue
-    print('{}: MAE:{}. RMSE:{}.'.format(attri[i], mean_absolute_error(preds[i], gts[i]), np.sqrt(mean_squared_error(preds[i], gts[i]))))
+        attri = ['sunny', 'backlight', '60', '90', 'stand', 'fly', 'small', 'mid']
+        for i in range(8):
+            # print(len(preds[i]))
+            if len(preds[i]) == 0:
+                continue
+            print('{}: MAE:{}. RMSE:{}.'.format(attri[i], mean_absolute_error(preds[i], gts[i]), np.sqrt(mean_squared_error(preds[i], gts[i]))))
+            f.write('{}: MAE:{}. RMSE:{}.\n'.format(attri[i], mean_absolute_error(preds[i], gts[i]), np.sqrt(mean_squared_error(preds[i], gts[i]))))
