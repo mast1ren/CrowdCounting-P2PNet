@@ -13,7 +13,7 @@ from crowd_datasets import build_dataset
 from engine import *
 from models import build_model
 import os
-from tensorboardX import SummaryWriter
+# from tensorboardX import SummaryWriter
 import warnings
 
 warnings.filterwarnings('ignore')
@@ -129,8 +129,8 @@ def main(args):
     batch_sampler_train = torch.utils.data.BatchSampler(
         sampler_train, args.batch_size, drop_last=True)
     # the dataloader for training
-    data_loader_train = DataLoader(train_set, args.batch_size, shuffle=True, collate_fn=utils.collate_fn_crowd, num_workers=args.num_workers, pin_memory=True, drop_last=True)
-    data_loader_val = DataLoader(val_set, 1, shuffle=False,
+    data_loader_train = DataLoader(train_set, args.batch_size, shuffle=True, collate_fn=utils.collate_fn_crowd, num_workers=args.num_workers, pin_memory=False, drop_last=True)
+    data_loader_val = DataLoader(val_set, 1, shuffle=False, pin_memory=False,
                                     drop_last=False, collate_fn=utils.collate_fn_crowd, num_workers=args.num_workers)
     # data_loader_train = DataLoader(train_set, batch_sampler=batch_sampler_train,
     #                                collate_fn=utils.collate_fn_crowd, num_workers=args.num_workers)
@@ -156,7 +156,7 @@ def main(args):
     mae = []
     mse = []
     # the logger writer
-    writer = SummaryWriter(args.tensorboard_dir)
+    # writer = SummaryWriter(args.tensorboard_dir)
     
     step = 0
     # training starts here
@@ -167,13 +167,13 @@ def main(args):
             args.clip_max_norm)
 
         # record the training states after every epoch
-        if writer is not None:
-            with open(run_log_name, "a") as log_file:
-                log_file.write("loss/loss@{}: {}".format(epoch, stat['loss']))
-                log_file.write("loss/loss_ce@{}: {}".format(epoch, stat['loss_ce']))
+        # if writer is not None:
+        #     with open(run_log_name, "a") as log_file:
+        #         log_file.write("loss/loss@{}: {}".format(epoch, stat['loss']))
+        #         log_file.write("loss/loss_ce@{}: {}".format(epoch, stat['loss_ce']))
                 
-            writer.add_scalar('loss/loss', stat['loss'], epoch)
-            writer.add_scalar('loss/loss_ce', stat['loss_ce'], epoch)
+        #     writer.add_scalar('loss/loss', stat['loss'], epoch)
+        #     writer.add_scalar('loss/loss_ce', stat['loss_ce'], epoch)
 
         t2 = time.time()
         print('[ep %d][lr %.7f][%.2fs]' % \
@@ -188,7 +188,7 @@ def main(args):
             'model': model_without_ddp.state_dict(),
         }, checkpoint_latest_path)
         # run evaluation
-        if epoch % args.eval_freq == 0 and epoch != 0:
+        if epoch % args.eval_freq == 0:
             t1 = time.time()
             result = evaluate_crowd_no_overlap(model, data_loader_val, device)
             t2 = time.time()
@@ -203,13 +203,13 @@ def main(args):
                                 result[1], t2 - t1, np.min(mae)))
             print('=======================================test=======================================')
             # recored the evaluation results
-            if writer is not None:
-                with open(run_log_name, "a") as log_file:
-                    log_file.write("metric/mae@{}: {}".format(step, result[0]))
-                    log_file.write("metric/mse@{}: {}".format(step, result[1]))
-                writer.add_scalar('metric/mae', result[0], step)
-                writer.add_scalar('metric/mse', result[1], step)
-                step += 1
+            # if writer is not None:
+            #     with open(run_log_name, "a") as log_file:
+            #         log_file.write("metric/mae@{}: {}".format(step, result[0]))
+            #         log_file.write("metric/mse@{}: {}".format(step, result[1]))
+            #     writer.add_scalar('metric/mae', result[0], step)
+            #     writer.add_scalar('metric/mse', result[1], step)
+            #     step += 1
 
             # save the best model since begining
             if abs(np.min(mae) - result[0]) < 0.01:

@@ -137,9 +137,9 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
 # the inference routine
 # @torch.no_grad()
 def evaluate_crowd_no_overlap(model, data_loader, device, vis_dir=None):
+    torch.cuda.empty_cache()
+    model.eval()
     with torch.no_grad():
-        model.eval()
-
         metric_logger = utils.MetricLogger(delimiter="  ")
         metric_logger.add_meter('class_error', utils.SmoothedValue(window_size=1, fmt='{value:.2f}'))
         # run inference on all images to calc MAE
@@ -176,4 +176,4 @@ def evaluate_crowd_no_overlap(model, data_loader, device, vis_dir=None):
         mae = np.mean(maes)
         mse = np.sqrt(np.mean(mses))
 
-        return mae, mse
+    return mae, mse

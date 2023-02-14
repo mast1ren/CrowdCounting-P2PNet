@@ -49,7 +49,7 @@ transform = standard_transforms.Compose([
     ])
 
 def get_seq_class(seq, set):
-    backlight = ['DJI_0021', 'DJI_0032', 'DJI_0202', 'DJI_0339', 'DJI_0340']
+    backlight = ['DJI_0021', 'DJI_0022',  'DJI_0032', 'DJI_0202', 'DJI_0339', 'DJI_0340']
     # cloudy = ['DJI_0519', 'DJI_0554']
     
     # uhd = ['DJI_0332', 'DJI_0334', 'DJI_0339', 'DJI_0340', 'DJI_0342', 'DJI_0343', 'DJI_345', 'DJI_0348', 'DJI_0519', 'DJI_0544']
@@ -79,17 +79,16 @@ def get_seq_class(seq, set):
     # if seq in uhd:
     #     resolution = 'uhd'
     
-    # count = 'sparse'
-    # loca = sio.loadmat(os.path.join(set, seq, 'annotation/000000.mat'))['locations']
-    # if loca.shape[0] > 150:
-    #     count = 'crowded'
-    # return light, resolution, count
-    return light, angle, bird, size
+    count = 'sparse'
+    loca = sio.loadmat(os.path.join('../../ds/dronebird/', set, 'ground_truth', 'GT_img'+str(seq[-3:])+'000.mat'))['locations']
+    if loca.shape[0] > 150:
+        count = 'crowded'
+    return light, angle, bird, size, count
 
 with open('../../ds/dronebird/test.json', 'r') as f:
     img_list = json.load(f)
-preds = [[] for i in range(8)]
-gts = [[] for i in range(8)]
+preds = [[] for i in range(10)]
+gts = [[] for i in range(10)]
 with torch.no_grad():
     metric_logger = utils.MetricLogger(delimiter="  ")
     metric_logger.add_meter('class_error', utils.SmoothedValue(window_size=1, fmt='{value:.2f}'))
@@ -128,24 +127,30 @@ with torch.no_grad():
         elif light == 'backlight':
             preds[1].append(pred_e)
             gts[1].append(gt_e)
-        if angle == '60':
+        if count == 'crowded':
             preds[2].append(pred_e)
             gts[2].append(gt_e)
         else:
             preds[3].append(pred_e)
             gts[3].append(gt_e)
-        if bird == 'stand':
+        if angle == '60':
             preds[4].append(pred_e)
             gts[4].append(gt_e)
         else:
             preds[5].append(pred_e)
             gts[5].append(gt_e)
-        if size == 'small':
+        if bird == 'stand':
             preds[6].append(pred_e)
             gts[6].append(gt_e)
         else:
             preds[7].append(pred_e)
             gts[7].append(gt_e)
+        if size == 'small':
+            preds[8].append(pred_e)
+            gts[8].append(gt_e)
+        else:
+            preds[9].append(pred_e)
+            gts[9].append(gt_e)
         # accumulate MAE, MSE
         mae = abs(predict_cnt - gt_e)
         mse = (predict_cnt - gt_e) * (predict_cnt - gt_e)
@@ -164,8 +169,8 @@ with torch.no_grad():
         f.write('mae: {:.4f}, mse: {:.4f}\n'.format(mae, mse))
 
     
-        attri = ['sunny', 'backlight', '60', '90', 'stand', 'fly', 'small', 'mid']
-        for i in range(8):
+        attri = ['sunny', 'backlight','crowded', 'sparse', '60', '90', 'stand', 'fly', 'small', 'mid']
+        for i in range(10):
             # print(len(preds[i]))
             if len(preds[i]) == 0:
                 continue
