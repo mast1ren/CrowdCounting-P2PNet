@@ -5,9 +5,9 @@ import random
 import numpy as np
 from torch.utils.data import Dataset
 from PIL import Image
-import glob
 import scipy.io as io
 import json
+
 
 class DRONEBIRD(Dataset):
     def __init__(self, data_root, transform=None, train=False, patch=False, flip=False):
@@ -33,14 +33,14 @@ class DRONEBIRD(Dataset):
         #     train_list = train_list.strip()
         #     with open(os.path.join(self.root_path, train_list)) as fin:
         #         for line in fin:
-        #             if len(line) < 2: 
+        #             if len(line) < 2:
         #                 continue
         #             line = line.strip().split()
         #             self.img_map[os.path.join(self.root_path, line[0].strip())] = \
         #                             os.path.join(self.root_path, line[1].strip())
         # number of samples
         self.nSamples = len(self.img_list)
-        
+
         self.transform = transform
         self.train = train
         self.patch = patch
@@ -54,7 +54,10 @@ class DRONEBIRD(Dataset):
 
         img_path = self.img_list[index]
         img_path = os.path.join(self.root_path, img_path)
-        gt_path = os.path.join(os.path.dirname(img_path).replace('images', 'ground_truth'), 'GT_'+os.path.basename(img_path).replace('.jpg', '.mat'))
+        gt_path = os.path.join(
+            os.path.dirname(img_path).replace('images', 'ground_truth'),
+            'GT_' + os.path.basename(img_path).replace('.jpg', '.mat'),
+        )
         # load image and ground truth
         img, point = load_data((img_path, gt_path), self.train)
         # applu augumentation
@@ -68,7 +71,9 @@ class DRONEBIRD(Dataset):
             scale = random.uniform(*scale_range)
             # scale the image and points
             if scale * min_size > 128:
-                img = torch.nn.functional.upsample_bilinear(img.unsqueeze(0), scale_factor=scale).squeeze(0)
+                img = torch.nn.functional.upsample_bilinear(
+                    img.unsqueeze(0), scale_factor=scale
+                ).squeeze(0)
                 point *= scale
         # random crop augumentaiton
         if self.train and self.patch:
@@ -122,6 +127,7 @@ def load_data(img_gt_path, train):
 
     return img, np.array(points)
 
+
 # random crop augumentation
 def random_crop(img, den, num_patch=2):
     half_h = 1024
@@ -137,7 +143,12 @@ def random_crop(img, den, num_patch=2):
         # copy the cropped rect
         result_img[i] = img[:, start_h:end_h, start_w:end_w]
         # copy the cropped points
-        idx = (den[:, 0] >= start_w) & (den[:, 0] <= end_w) & (den[:, 1] >= start_h) & (den[:, 1] <= end_h)
+        idx = (
+            (den[:, 0] >= start_w)
+            & (den[:, 0] <= end_w)
+            & (den[:, 1] >= start_h)
+            & (den[:, 1] <= end_h)
+        )
         # shift the corrdinates
         record_den = den[idx]
         record_den[:, 0] -= start_w

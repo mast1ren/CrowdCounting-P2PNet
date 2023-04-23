@@ -9,29 +9,44 @@ import numpy as np
 from PIL import Image
 import json
 import h5py
-import scipy.io as io
-from sklearn.metrics import mean_squared_error,mean_absolute_error
+import scipy.io as sio
+from sklearn.metrics import mean_squared_error, mean_absolute_error
+
 
 def get_args_parser():
-    parser = argparse.ArgumentParser('Set parameters for P2PNet evaluation', add_help=False)
-    
+    parser = argparse.ArgumentParser(
+        'Set parameters for P2PNet evaluation', add_help=False
+    )
+
     # * Backbone
-    parser.add_argument('--backbone', default='vgg16_bn', type=str,
-                        help="name of the convolutional backbone to use")
+    parser.add_argument(
+        '--backbone',
+        default='vgg16_bn',
+        type=str,
+        help="name of the convolutional backbone to use",
+    )
 
-    parser.add_argument('--row', default=2, type=int,
-                        help="row number of anchor points")
-    parser.add_argument('--line', default=2, type=int,
-                        help="line number of anchor points")
+    parser.add_argument(
+        '--row', default=2, type=int, help="row number of anchor points"
+    )
+    parser.add_argument(
+        '--line', default=2, type=int, help="line number of anchor points"
+    )
 
-    parser.add_argument('--weight_path', default='',
-                        help='path where the trained weights saved')
+    parser.add_argument(
+        '--weight_path', default='', help='path where the trained weights saved'
+    )
 
-    parser.add_argument('--gpu_id', default=0, type=int, help='the gpu used for evaluation')
+    parser.add_argument(
+        '--gpu_id', default=0, type=int, help='the gpu used for evaluation'
+    )
 
     return parser
 
-parser = argparse.ArgumentParser('P2PNet evaluation script', parents=[get_args_parser()])
+
+parser = argparse.ArgumentParser(
+    'P2PNet evaluation script', parents=[get_args_parser()]
+)
 args = parser.parse_args()
 os.environ["CUDA_VISIBLE_DEVICES"] = '{}'.format(args.gpu_id)
 
@@ -42,23 +57,56 @@ checkpoint = torch.load(args.weight_path, map_location='cpu')
 model.load_state_dict(checkpoint['model'])
 
 model.eval()
-    # create the pre-processing transform
-transform = standard_transforms.Compose([
-        standard_transforms.ToTensor(), 
-        standard_transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-    ])
+# create the pre-processing transform
+transform = standard_transforms.Compose(
+    [
+        standard_transforms.ToTensor(),
+        standard_transforms.Normalize(
+            mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
+        ),
+    ]
+)
+
 
 def get_seq_class(seq, set):
-    backlight = ['DJI_0021', 'DJI_0022',  'DJI_0032', 'DJI_0202', 'DJI_0339', 'DJI_0340']
+    backlight = ['DJI_0021', 'DJI_0022', 'DJI_0032', 'DJI_0202', 'DJI_0339', 'DJI_0340']
     # cloudy = ['DJI_0519', 'DJI_0554']
-    
+
     # uhd = ['DJI_0332', 'DJI_0334', 'DJI_0339', 'DJI_0340', 'DJI_0342', 'DJI_0343', 'DJI_345', 'DJI_0348', 'DJI_0519', 'DJI_0544']
 
-    fly = ['DJI_0177', 'DJI_0174', 'DJI_0022', 'DJI_0180', 'DJI_0181', 'DJI_0200', 'DJI_0544', 'DJI_0012', 'DJI_0178', 'DJI_0343', 'DJI_0185', 'DJI_0195']
+    fly = [
+        'DJI_0177',
+        'DJI_0174',
+        'DJI_0022',
+        'DJI_0180',
+        'DJI_0181',
+        'DJI_0200',
+        'DJI_0544',
+        'DJI_0012',
+        'DJI_0178',
+        'DJI_0343',
+        'DJI_0185',
+        'DJI_0195',
+    ]
 
     angle_90 = ['DJI_0179', 'DJI_0186', 'DJI_0189', 'DJI_0191', 'DJI_0196', 'DJI_0190']
 
-    mid_size = ['DJI_0012', 'DJI_0013', 'DJI_0014', 'DJI_0021', 'DJI_0022', 'DJI_0026', 'DJI_0028', 'DJI_0028', 'DJI_0030', 'DJI_0028', 'DJI_0030', 'DJI_0034','DJI_0200', 'DJI_0544']
+    mid_size = [
+        'DJI_0012',
+        'DJI_0013',
+        'DJI_0014',
+        'DJI_0021',
+        'DJI_0022',
+        'DJI_0026',
+        'DJI_0028',
+        'DJI_0028',
+        'DJI_0030',
+        'DJI_0028',
+        'DJI_0030',
+        'DJI_0034',
+        'DJI_0200',
+        'DJI_0544',
+    ]
 
     light = 'sunny'
     bird = 'stand'
@@ -78,26 +126,36 @@ def get_seq_class(seq, set):
 
     # if seq in uhd:
     #     resolution = 'uhd'
-    
-    count = 'sparse'
-    loca = sio.loadmat(os.path.join('../../ds/dronebird/', set, 'ground_truth', 'GT_img'+str(seq[-3:])+'000.mat'))['locations']
-    if loca.shape[0] > 150:
-        count = 'crowded'
-    return light, angle, bird, size, count
 
-with open('../../ds/dronebird/test.json', 'r') as f:
+    # count = 'sparse'
+    # loca = sio.loadmat(
+    #     os.path.join(
+    #         '../../nas-public-linkdata/ds/dronebird/',
+    #         set,
+    #         'ground_truth',
+    #         'GT_img' + str(seq[-3:]) + '000.mat',
+    #     )
+    # )['locations']
+    # if loca.shape[0] > 150:
+    #     count = 'crowded'
+    return light, angle, bird, size
+
+
+with open('../../nas-public-linkdata/ds/dronebird/test.json', 'r') as f:
     img_list = json.load(f)
 preds = [[] for i in range(10)]
 gts = [[] for i in range(10)]
 with torch.no_grad():
     metric_logger = utils.MetricLogger(delimiter="  ")
-    metric_logger.add_meter('class_error', utils.SmoothedValue(window_size=1, fmt='{value:.2f}'))
+    metric_logger.add_meter(
+        'class_error', utils.SmoothedValue(window_size=1, fmt='{value:.2f}')
+    )
     # run inference on all images to calc MAE
     maes = []
     mses = []
     i = 0
     for img_path in img_list:
-        img_path = os.path.join('../../ds/dronebird', img_path)
+        img_path = os.path.join('../../nas-public-linkdata/ds/dronebird/', img_path)
         seq = int(os.path.basename(img_path)[3:6])
         seq = 'DJI_' + str(seq).zfill(4)
         light, angle, bird, size = get_seq_class(seq, 'test')
@@ -107,18 +165,25 @@ with torch.no_grad():
         img = img.unsqueeze(0)
         img = img.to(device)
         outputs = model(img)
-        outputs_scores = torch.nn.functional.softmax(outputs['pred_logits'], -1)[:, :, 1][0]
+        outputs_scores = torch.nn.functional.softmax(outputs['pred_logits'], -1)[
+            :, :, 1
+        ][0]
         outputs_points = outputs['pred_points'][0]
 
-        gt_path = os.path.join(os.path.dirname(img_path).replace('images', 'ground_truth'), 'GT_'+os.path.basename(img_path).replace('.jpg', '.mat'))
-        gt_file = io.loadmat(gt_path)['locations']
+        gt_path = os.path.join(
+            os.path.dirname(img_path).replace('images', 'ground_truth'),
+            'GT_' + os.path.basename(img_path).replace('.jpg', '.mat'),
+        )
+        gt_file = sio.loadmat(gt_path)['locations']
         # gt = h5py.File(img_path.replace('data', 'annotation').replace('.jpg', '.h5'), 'r')['density'][:]
         gt_e = gt_file.shape[0]
         count = 'crowded' if gt_e > 150 else 'sparse'
 
         # 0.5 is used by default
         threshold = 0.5
-        points = outputs_points[outputs_scores > threshold].detach().cpu().numpy().tolist()
+        points = (
+            outputs_points[outputs_scores > threshold].detach().cpu().numpy().tolist()
+        )
         predict_cnt = int((outputs_scores > threshold).sum())
         pred_e = predict_cnt
         if light == 'sunny':
@@ -155,7 +220,12 @@ with torch.no_grad():
         mae = abs(predict_cnt - gt_e)
         mse = (predict_cnt - gt_e) * (predict_cnt - gt_e)
         i += 1
-        print('\r[{:{}}/{}] mae: {:.4f}, mse: {:.4f}, pred: {:.4f}, gt: {:.4f}'.format(i, len(str(len(img_list))), len(img_list), mae, mse, predict_cnt, gt_e), end='')
+        print(
+            '\r[{:{}}/{}] mae: {:.4f}, mse: {:.4f}, pred: {:.4f}, gt: {:.4f}'.format(
+                i, len(str(len(img_list))), len(img_list), mae, mse, predict_cnt, gt_e
+            ),
+            end='',
+        )
         maes.append(float(mae))
         mses.append(float(mse))
     print()
@@ -168,11 +238,33 @@ with torch.no_grad():
         print('mae: {:.4f}, mse: {:.4f}'.format(mae, mse))
         f.write('mae: {:.4f}, mse: {:.4f}\n'.format(mae, mse))
 
-    
-        attri = ['sunny', 'backlight','crowded', 'sparse', '60', '90', 'stand', 'fly', 'small', 'mid']
+        attri = [
+            'sunny',
+            'backlight',
+            'crowded',
+            'sparse',
+            '60',
+            '90',
+            'stand',
+            'fly',
+            'small',
+            'mid',
+        ]
         for i in range(10):
             # print(len(preds[i]))
             if len(preds[i]) == 0:
                 continue
-            print('{}: MAE:{}. RMSE:{}.'.format(attri[i], mean_absolute_error(preds[i], gts[i]), np.sqrt(mean_squared_error(preds[i], gts[i]))))
-            f.write('{}: MAE:{}. RMSE:{}.\n'.format(attri[i], mean_absolute_error(preds[i], gts[i]), np.sqrt(mean_squared_error(preds[i], gts[i]))))
+            print(
+                '{}: MAE:{}. RMSE:{}.'.format(
+                    attri[i],
+                    mean_absolute_error(preds[i], gts[i]),
+                    np.sqrt(mean_squared_error(preds[i], gts[i])),
+                )
+            )
+            f.write(
+                '{}: MAE:{}. RMSE:{}.\n'.format(
+                    attri[i],
+                    mean_absolute_error(preds[i], gts[i]),
+                    np.sqrt(mean_squared_error(preds[i], gts[i])),
+                )
+            )
