@@ -69,10 +69,16 @@ transform = standard_transforms.Compose(
 
 
 def get_seq_class(seq, set):
-    backlight = ['DJI_0021', 'DJI_0022', 'DJI_0032', 'DJI_0202', 'DJI_0339', 'DJI_0340']
-    # cloudy = ['DJI_0519', 'DJI_0554']
-
-    # uhd = ['DJI_0332', 'DJI_0334', 'DJI_0339', 'DJI_0340', 'DJI_0342', 'DJI_0343', 'DJI_345', 'DJI_0348', 'DJI_0519', 'DJI_0544']
+    backlight = [
+        'DJI_0021',
+        'DJI_0022',
+        'DJI_0032',
+        'DJI_0202',
+        'DJI_0339',
+        'DJI_0340',
+        'DJI_0463',
+        'DJI_0003',
+    ]
 
     fly = [
         'DJI_0177',
@@ -87,9 +93,27 @@ def get_seq_class(seq, set):
         'DJI_0343',
         'DJI_0185',
         'DJI_0195',
+        'DJI_0996',
+        'DJI_0977',
+        'DJI_0945',
+        'DJI_0946',
+        'DJI_0091',
+        'DJI_0442',
+        'DJI_0466',
+        'DJI_0459',
+        'DJI_0464',
     ]
 
-    angle_90 = ['DJI_0179', 'DJI_0186', 'DJI_0189', 'DJI_0191', 'DJI_0196', 'DJI_0190']
+    angle_90 = [
+        'DJI_0179',
+        'DJI_0186',
+        'DJI_0189',
+        'DJI_0191',
+        'DJI_0196',
+        'DJI_0190',
+        'DJI_0070',
+        'DJI_0091',
+    ]
 
     mid_size = [
         'DJI_0012',
@@ -106,6 +130,9 @@ def get_seq_class(seq, set):
         'DJI_0034',
         'DJI_0200',
         'DJI_0544',
+        'DJI_0463',
+        'DJI_0001',
+        'DJI_0149',
     ]
 
     light = 'sunny'

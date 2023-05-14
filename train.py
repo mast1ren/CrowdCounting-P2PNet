@@ -107,7 +107,11 @@ def get_args_parser():
     )
 
     parser.add_argument('--seed', default=2464, type=int)
-    parser.add_argument('--resume', default='', help='resume from checkpoint')
+    parser.add_argument(
+        '--resume',
+        default='../../nas-public-linkdata/ds/result/p2p/p2p_SHTechA.pth',
+        help='resume from checkpoint',
+    )
     parser.add_argument(
         '--start_epoch', default=0, type=int, metavar='N', help='start epoch'
     )
